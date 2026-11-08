@@ -19,3 +19,8 @@ yarn-error.log
 /.idea
 /.vscode
 /.zed
+
+# Terraform
+infra/**/.terraform/
+infra/**/*.tfstate*
+infra/**/terraform.tfvars

@@ -1,0 +1,5 @@
+route53_zone_id   = "ZXXXXXXXXXXXXX"
+letsencrypt_email = "you@example.com"
+# region          = "us-east-1"
+# google_client_id = ""
+# sentry_dsn       = ""
