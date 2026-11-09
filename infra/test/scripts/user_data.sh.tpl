@@ -3,6 +3,9 @@
 set -euxo pipefail
 exec > >(tee /var/log/vine-provision.log) 2>&1
 export DEBIAN_FRONTEND=noninteractive
+# cloud-init runs without HOME; composer and git need it
+export HOME=/root
+export COMPOSER_HOME=/root/.composer
 
 # 1G swap so composer / vite builds fit in 2GB RAM
 fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
@@ -70,7 +73,7 @@ export COMPOSER_ALLOW_SUPERUSER=1
 export HOME=/root
 
 aws ssm get-parameter --name /vine-test/deploy_key --with-decryption \
-  --query Parameter.Value --output text > /root/.ssh/vine_deploy_key
+  --query Parameter.Value --output text | cat > /root/.ssh/vine_deploy_key
 chmod 600 /root/.ssh/vine_deploy_key
 export GIT_SSH_COMMAND="ssh -i /root/.ssh/vine_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 git config --global --add safe.directory /var/www/vine

@@ -7,7 +7,7 @@ export COMPOSER_ALLOW_SUPERUSER=1
 cd /var/www/vine
 
 aws ssm get-parameter --name /vine-test/env --with-decryption \
-  --query Parameter.Value --output text > .env
+  --query Parameter.Value --output text | cat > .env
 
 composer install --no-dev --optimize-autoloader --no-interaction
 npm ci

@@ -27,6 +27,12 @@ variable "github_repo" {
   default     = "Mina-Nabil/vine"
 }
 
+variable "github_oidc_sub_prefix" {
+  description = "Immutable OIDC subject prefix when the repo uses it, e.g. repo:owner@123/name@456 (from: gh api repos/OWNER/NAME/actions/oidc/customization/sub)"
+  type        = string
+  default     = ""
+}
+
 variable "deploy_branch" {
   description = "Branch that is deployed to this environment"
   type        = string
