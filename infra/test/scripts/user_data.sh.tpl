@@ -12,7 +12,7 @@ fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /
 echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 apt-get update
-apt-get install -y nginx mariadb-server git unzip curl nodejs npm certbot python3-certbot-nginx \
+apt-get install -y nginx mariadb-server git unzip curl certbot python3-certbot-nginx \
   php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip \
   php8.3-bcmath php8.3-gd php8.3-intl
 snap install aws-cli --classic

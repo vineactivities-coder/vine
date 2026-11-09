@@ -10,8 +10,6 @@ aws ssm get-parameter --name /vine-test/env --with-decryption \
   --query Parameter.Value --output text | cat > .env
 
 composer install --no-dev --optimize-autoloader --no-interaction
-npm ci
-npm run build
 
 mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache .env
