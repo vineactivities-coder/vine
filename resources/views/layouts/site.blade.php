@@ -3,14 +3,34 @@
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
 <!--[if gt IE 8]><!-->
-<html class="no-js" lang=""> <!--<![endif]-->
+<html class="no-js" lang="ar" dir="rtl"> <!--<![endif]-->
 
 <head>
     <!-- Meta -->
     <meta charset="utf-8">
     <!--[if IE]><meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'><![endif]-->
-    <title>Vine Activities</title>
-    <meta name="description" content="">
+    @php
+        $pageTitle = $seo['title'] ?? 'Vine Activities | وسائل وأنشطة تعليمية لمدارس الأحد';
+        $pageDescription = $seo['description'] ?? 'مواد فنية وتعليمية مبتكرة للأطفال وخدام مدارس الأحد القبطية.';
+        $pageCanonical = $seo['canonical'] ?? url()->current();
+        $pageImage = $seo['image'] ?? ($site_info->landing_image ?? asset('assets/images/vineLogo.png'));
+        $pageImage = url($pageImage);
+    @endphp
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <meta name="robots" content="{{ $seo['robots'] ?? 'index,follow' }}">
+    <link rel="canonical" href="{{ $pageCanonical }}">
+    <meta property="og:locale" content="ar_EG">
+    <meta property="og:site_name" content="Vine Activities">
+    <meta property="og:type" content="{{ $seo['type'] ?? 'website' }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:url" content="{{ $pageCanonical }}">
+    <meta property="og:image" content="{{ $pageImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+    <meta name="twitter:image" content="{{ $pageImage }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="google-signin-client_id"
@@ -75,8 +95,9 @@
     <link rel="stylesheet" href="{{ url('assets/js/plugins/owl-carousel/owl.carousel.css') }}">
 
     <!-- Google Web Fonts -->
-    <link href='https://fonts.googleapis.com/css?family=Lato:400,100,300,700,900' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Merriweather:400,300,700,900' rel='stylesheet' type='text/css'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href='https://fonts.googleapis.com/css?family=Lato:300,400,700|Merriweather:300,400,700&display=swap' rel='stylesheet' type='text/css'>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
@@ -84,7 +105,6 @@
     <!-- Slider Revolution -->
     <script src="{{ url('assets/js/plugins/revolution/js/jquery.themepunch.tools.min.js') }}"></script>
     <script src="{{ url('assets/js/plugins/revolution/js/jquery.themepunch.revolution.min.js') }}"></script>
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
 
     <!-- Slider Revolution 5.0 Extensions
             (Load Extensions only on Local File Systems !
@@ -136,7 +156,6 @@
     <div id="g_id_onload" data-client_id="980156877622-i08tl355o8bd0aks6tuq1a3uper1latf.apps.googleusercontent.com"
         data-login_uri="{{ url('googlelogin') }}" data-use_fedcm_for_prompt="true" data-auto_prompt="true">
     </div>
-    </div>
 
     <!-- Top Bar Start -->
     <div class="ws-topbar">
@@ -163,7 +182,7 @@
 
                 <!-- Cart -->
                 <li class="ws-shop-cart">
-                    <a href="{{ url('cart') }}" class="btn btn-sm cart-count">Cart (2)</a>
+                    <a href="{{ url('cart') }}" class="btn btn-sm cart-count">Cart ({{ $cart->count }})</a>
 
                     <!-- Cart Popover -->
                     <div class="ws-shop-minicart">
@@ -177,7 +196,7 @@
 
                             <!-- Subtotal -->
                             <div class="minicart-content-total">
-                                <h3>Subtotal: {{ $cart->total }}</h3>
+                                <h3>Subtotal: {{ number_format($cart->total, 2) }} EGP</h3>
                             </div>
 
                             <!-- Checkout -->
@@ -221,8 +240,8 @@
 
                     <!-- Logo -->
                     <div class="ws-logo ws-center">
-                        <a href="{{ url('home') }}">
-                            <img src="{{ url('assets/images/vineLogo.png') }}" alt="Alternative Text"
+                        <a href="{{ route('home') }}">
+                            <img src="{{ url('assets/images/vineLogo.png') }}" alt="Vine Activities"
                                 class="img-responsive">
                         </a>
                     </div>
@@ -230,7 +249,7 @@
                     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                         <ul class="nav navbar-nav navbar-left">
                             <li class="dropdown">
-                                <a href="{{ url('home') }}">Home </a>
+                                <a href="{{ route('home') }}">Home </a>
 
                             </li>
                             <li><a href="{{ url('shop') }}">Shop</a></li>
@@ -245,7 +264,7 @@
                                         class="caret"></span></a>
                                 <ul class="dropdown-menu">
                                     @foreach ($subcategories as $subcatg)
-                                        <li><a href="{{ url("shop/{$subcatg->category->id}") }}">{{ $subcatg->category->arabic_name }}
+                                        <li><a href="{{ route('shop.subcategory', $subcatg) }}">{{ $subcatg->category->arabic_name }}
                                                 - {{ $subcatg->arabic_name }}</a></li>
                                     @endforeach
                                 </ul>
@@ -259,6 +278,11 @@
         </header>
         <!-- End Header -->
 
+        @if ($errors->any())
+            <div class="container alert alert-danger" role="alert"><ul>
+                @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+            </ul></div>
+        @endif
         @yield('content')
 
 
@@ -287,7 +311,7 @@
 
                     <!-- Instagram Item -->
                     <div class="col-sm-3 ws-instagram-item" data-sr='wait 0.1s, ease-in 20px'>
-                        <img src="{{ $site_info->footer1_url }}"
+                        <img src="{{ $site_info->footer1_url }}" loading="lazy" decoding="async"
                             alt="قداسه البابا تواضرس  يبدي اعجابه الشديد بالخط الزمني بعد مراجعته"
                             class="img-responsive"
                             title="قداسه البابا تواضرس  يبدي اعجابه الشديد بالخط الزمني بعد مراجعته">
@@ -295,7 +319,7 @@
 
                     <!-- Instagram Item -->
                     <div class="col-sm-3 ws-instagram-item" data-sr='wait 0.3s, ease-in 20px'>
-                        <img src="{{ $site_info->footer2_url }}"
+                        <img src="{{ $site_info->footer2_url }}" loading="lazy" decoding="async"
                             alt="نيافه الانبا موسي اسقف الشباب يقوم بشرح الخط الزمني في معرض الكتاب القبطي"
                             class="img-responsive"
                             title="نيافه الانبا موسي اسقف الشباب يقوم بشرح الخط الزمني في معرض الكتاب القبطي">
@@ -303,7 +327,7 @@
 
                     <!-- Instagram Item -->
                     <div class="col-sm-3 ws-instagram-item" data-sr='wait 0.5s, ease-in 20px'>
-                        <img src="{{ $site_info->footer3_url }}"
+                        <img src="{{ $site_info->footer3_url }}" loading="lazy" decoding="async"
                             alt="القمص تادرس يعقوب ملطي يقوم بمراجعه الخط الزمني للكتاب المقدس و يقوم بعرضه علي قدسه القمص مارك عزيز"
                             class="img-responsive"
                             title="القمص تادرس يعقوب ملطي يقوم بمراجعه الخط الزمني للكتاب المقدس و يقوم بعرضه علي قدسه القمص مارك عزيز">
@@ -401,106 +425,31 @@
         <script src="{{ url('assets/js/plugins/bootstrap-dropdownhover.min.js') }}"></script>
         <script src="{{ url('assets/js/main.js') }}"></script>
 
+        <script src="{{ asset('assets/js/cart.js') }}?v=2"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                fetchCartData();
-
-                function fetchCartData() {
-                    fetch('{{ $apiCart }}')
-                        .then(response => response.json())
-                        .then(cart => {
-                            populateCart(cart);
-                        })
-                        .catch(error => {
-                            console.error('Error fetching cart data:', error);
-                        });
-                }
-
-                function populateCart(cart) {
-                    const minicartContentItems = document.querySelector('.minicart-content-items');
-                    const minicartTotal = document.querySelector('.minicart-content-total h3');
-                    const minicartCount = document.querySelector('.cart-count');
-                    minicartContentItems.innerHTML = ''; // Clear current items
-
-                    cart.items.forEach(item => {
-                        minicartContentItems.innerHTML += `
-
-
-                <li class="media" data-id="${item.id}">
-                    <div class="media-left">
-                        <a href="#">
-                            <img src="${item.image_url}" class="media-object" alt="Alternative Text">
-                        </a>
-                    </div>
-                    <div class="minicart-content-details media-body">
-                        <h3><a href="#">${item.quantity > 1 ? `${item.quantity} x ` : ''}${item.title}</a></h3>
-                        <span class="minicart-content-price" >${item.quantity} x ${item.price}EGP</span>               
-                        <span class="minicart-content-remove btn-remove" data-id="${item.id}"><i class="fa fa-times"></i></span> 
-                    </div>
-                </li>`;
-                    });
-
-                    // Update subtotal
-                    minicartTotal.textContent = `Subtotal: ${cart.total}`;
-                    minicartCount.textContent = `Cart (${cart.count})`;
-
-                    // Attach event listeners
-                    attachEventListeners();
-
-                }
-
-                function attachEventListeners() {
-
-
-                    document.querySelectorAll('.btn-remove').forEach(button => {
-                        button.addEventListener('click', function() {
-                            const id = this.dataset.id;
-                            updateCart('{{ $removeFromCartUrl }}', {
-                                id: id
-                            });
-                        });
-                    });
-                }
-
-                function updateCart(url, data) {
-                    fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify(data)
-                        })
-                        .then(response => response.json())
-                        .then(cart => {
-                            fetchCartData();
-
-                        })
-                        .catch(error => {
-                            console.error('Error updating cart:', error);
-                        });
-
-
-                }
-
-                document.querySelectorAll('.btn-add-cart').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const id = document.querySelector(`#prod_id`).value;
-                        const quantityInput = document.querySelector(`#prod_count`);
-                        const quantity = parseInt(quantityInput.value) || 1;
-                        updateCart('{{ $addToCartUrl }}', {
-                            id: id,
-                            quantity: quantity
-                        });
-
-                        Swal.fire({
-                            text: "Cart Updated",
-                            icon: "success",
-                        })
-                    });
-                });
+            VineCart.mount({
+                initial: @json($cart), api: @json($apiCart), add: @json($addToCartUrl),
+                remove: @json($removeFromCartUrl), csrf: @json(csrf_token())
             });
         </script>
-</body>
+        @yield('js_content')
+        <script type="application/ld+json">
+            {!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => 'Vine Activities',
+                'url' => url('/'),
+                'logo' => asset('assets/images/vineLogo.png'),
+                'contactPoint' => [
+                    '@type' => 'ContactPoint',
+                    'telephone' => $site_info->phone ?: '+201200165007',
+                    'contactType' => 'customer service',
+                    'availableLanguage' => ['Arabic', 'English'],
+                ],
+                'sameAs' => array_values(array_filter([$site_info->fb_url, $site_info->insta_url])),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
+        </script>
+        @yield('structured_data')
+    </body>
 
 </html>
