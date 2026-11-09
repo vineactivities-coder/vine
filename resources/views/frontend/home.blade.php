@@ -6,7 +6,8 @@
         <ul>
             <li data-transition="fade" data-easein="Power4.easeInOut" data-easeout="Power4.easeInOut" data-masterspeed="2000">
                 <!-- Background Image -->
-                <img src="{{ $site_info->landing_image }}" alt="Alternative Text" data-bgposition="center center"
+                <img src="{{ $site_info->landing_image }}" alt="وسائل وأنشطة Vine Activities التعليمية" fetchpriority="high"
+                    data-bgposition="center center"
                     data-bgfit="cover" data-bgrepeat="no-repeat" data-bgparallax="10">
 
                 <!-- Background Overlay -->
@@ -83,7 +84,7 @@
                         <div class="col-sm-{{ 12 / $slides->count() }} featured-collections-item">
                             <a @if ($slide->SLID_BTN_URL) href="{{ $slide->SLID_BTN_URL }}" @endif>
                                 <div class="thumbnail">
-                                    <img src="{{ $slide->image_url }}">
+                                    <img src="{{ $slide->image_url }}" alt="{{ $slide->title ?? 'Vine Activities' }}" loading="lazy" decoding="async">
                                     @if ($slide->SLID_TITL)
                                         <div class="ws-overlay">
                                             <div class="caption">
@@ -173,7 +174,7 @@
                         <div class="ws-item-offer">
                             <!-- Image -->
                             <figure>
-                                <img src="{{ $location->image_url }}" alt="{{ $location->title }}" class="img-responsive">
+                                <img src="{{ $location->image_url }}" alt="{{ $location->title }}" class="img-responsive" loading="lazy" decoding="async">
                             </figure>
                         </div>
 
@@ -223,7 +224,7 @@
                             <div class="ws-item-offer">
                                 <!-- Image -->
                                 <figure>
-                                    <img src="{{ $prod->main_image_url }}" alt="{{ $prod->name }}"
+                                    <img src="{{ $prod->main_image_url }}" alt="{{ $prod->arabic_name }} - {{ $prod->name }}" loading="lazy" decoding="async"
                                         class="img-responsive">
                                 </figure>
                                 <!-- Sale Caption -->

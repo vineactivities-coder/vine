@@ -1,122 +1,98 @@
 @extends('layouts.site')
 
 @section('content')
-    <!-- Page Parallax Header -->
     <div class="ws-parallax-header parallax-window" data-parallax="scroll"
         data-image-src="{{ $site_info->landing_image }}">
         <div class="ws-overlay">
             <div class="ws-parallax-caption">
                 <div class="ws-parallax-holder">
-                    <h1>Our Products</h1>
+                    <h1>منتجاتنا <small style="color: inherit;">Our Products</small></h1>
                 </div>
             </div>
         </div>
     </div>
-    <!-- End Page Parallax Header -->
 
-    <!-- Page Content -->
     <div class="container ws-page-container">
         <div class="row">
-            <div class="ws-shop-page">
-                <!-- Categories Nav -->
-                <ul class="nav nav-tabs" role="tablist">
-                    <li role="presentation" @class(['active' => !isset($category_id)])>
-                        <a href="#all" aria-controls="all" role="tab" data-toggle="tab">
-                            All ({{ $products->count() }})</a>
-                    </li>
-                    @foreach ($categories as $catg)
-                        <li role="presentation" @class(['active' => isset($category_id) && $category_id == $catg->id])>
-                            <a href="#{{ str_replace(' ', '-', $catg->name) }}" aria-controls="prints" role="tab"
-                                data-toggle="tab">{{ $catg->arabic_name }}
-                                ({{ $catg->products->count() }})
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-
-                <!-- Categories Content -->
-                <div class="tab-content">
-                    <!-- All -->
-                    <div role="tabpanel" @class(['tab-pane fade in', 'active' => !isset($category_id)]) id="all">
-                        @foreach ($products as $prod)
-                            <!-- Item -->
-                            <div class="col-sm-6 col-md-4 ws-works-item">
-                                <a href="{{ url("product/$prod->id") }}">
-                                    <div class="ws-item-offer">
-                                        <!-- Image -->
-                                        <figure>
-                                            <img src="{{ $prod->main_image_url }}" alt="Alternative Text"
-                                                class="img-responsive">
-                                        </figure>
-                                    </div>
-
-                                    <div class="ws-works-caption text-center">
-                                        <!-- Item Category -->
-                                        <div class="ws-item-category">{{ $prod->subcategory->arabic_name }}</div>
-
-                                        <!-- Title -->
-                                        <h3 class="ws-item-title">{{ $prod->arabic_name }}</h3>
-
-                                        <div class="ws-item-separator"></div>
-
-                                        <!-- Price -->
-                                        @if ($prod->offer)
-                                            <div class="ws-item-price"><del>{{ number_format($prod->price) }}EGP</del>
-                                                <ins>{{ number_format($prod->price - $prod->offer) }}EGP</ins>
-                                            </div>
-                                        @else
-                                            <div class="ws-item-price"><ins>{{ number_format($prod->price) }}EGP</ins>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </a>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    @foreach ($categories as $catg)
-                        <div role="tabpanel" @class([
-                            'tab-pane fade in',
-                            'active' => isset($category_id) && $category_id == $catg->id,
-                        ]) id="{{ str_replace(' ', '-', $catg->name) }}">
-                            @foreach ($catg->products as $prod)
-                                <div class="col-sm-6 col-md-4 ws-works-item">
-                                    <a href="{{ url("product/$prod->id") }}">
-                                        <div class="ws-item-offer">
-                                            <!-- Image -->
-                                            <figure>
-                                                <img src="{{ $prod->main_image_url }}" alt="Alternative Text"
-                                                    class="img-responsive">
-                                            </figure>
-                                        </div>
-
-                                        <div class="ws-works-caption text-center">
-                                            <!-- Item Category -->
-                                            <div class="ws-item-category">{{ $prod->subcategory->arabic_name }}</div>
-
-                                            <!-- Title -->
-                                            <h3 class="ws-item-title">{{ $prod->arabic_name }}</h3>
-
-                                            <div class="ws-item-separator"></div>
-
-                                            <!-- Price -->
-                                            @if ($prod->offer)
-                                                <div class="ws-item-price"><del>{{ number_format($prod->price) }}EGP</del>
-                                                    <ins>{{ number_format($prod->price - $prod->offer) }}EGP</ins>
-                                                </div>
-                                            @else
-                                                <div class="ws-item-price"><ins>{{ number_format($prod->price) }}EGP</ins>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </a>
-                                </div>
-                            @endforeach
+            <div class="col-xs-12">
+                <form action="{{ route('shop') }}" method="GET" class="well" role="search" aria-label="البحث وتصفية المنتجات">
+                    <div class="row">
+                        <div class="form-group col-sm-5">
+                            <label for="shop-search">البحث / Search</label>
+                            <input id="shop-search" name="q" type="search" class="form-control"
+                                value="{{ $search_text }}" maxlength="100"
+                                placeholder="ابحث باسم المنتج أو القسم / Search products or categories">
                         </div>
-                    @endforeach
-
-                </div>
+                        <div class="form-group col-sm-3">
+                            <label for="shop-category">القسم / Category</label>
+                            <select id="shop-category" name="category" class="form-control">
+                                <option value="">كل الأقسام / All categories</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}" @selected((string) $category_id === (string) $category->id)>
+                                        {{ $category->arabic_name }} / {{ $category->name }} ({{ $category->products_count }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-3">
+                            <label for="shop-sort">الترتيب / Sort</label>
+                            <select id="shop-sort" name="sort" class="form-control">
+                                <option value="">الافتراضي / Default</option>
+                                <option value="price_asc" @selected($sort_option === 'price_asc')>السعر بعد الخصم: الأقل أولاً</option>
+                                <option value="price_desc" @selected($sort_option === 'price_desc')>السعر بعد الخصم: الأعلى أولاً</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-1">
+                            <label class="hidden-xs">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-block">بحث</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
-        <!-- End Page Content -->
-    @endsection
+
+        <div class="row">
+            <div class="ws-shop-page">
+                <div class="col-xs-12 shop-results-summary">
+                    <p><strong>{{ $products->count() }}</strong> نتيجة / results</p>
+                    @if ($search_text !== '' || $category_id !== null || $sort_option !== '')
+                        <a href="{{ route('shop') }}" class="btn btn-default btn-sm">مسح التصفية / Clear filters</a>
+                    @endif
+                </div>
+                @forelse ($products as $prod)
+                    <div class="col-sm-6 col-md-4 ws-works-item">
+                        <a href="{{ route('product', $prod) }}">
+                            <div class="ws-item-offer">
+                                <figure>
+                                    <img src="{{ $prod->main_image_url }}" alt="{{ $prod->arabic_name }} / {{ $prod->name }}" loading="lazy" decoding="async"
+                                        class="img-responsive">
+                                </figure>
+                            </div>
+                            <div class="ws-works-caption text-center">
+                                <div class="ws-item-category">
+                                    {{ $prod->subcategory->arabic_name }} / {{ $prod->subcategory->name }}
+                                </div>
+                                <h3 class="ws-item-title">{{ $prod->arabic_name }}</h3>
+                                <p>{{ $prod->name }}</p>
+                                <div class="ws-item-separator"></div>
+                                @if ($prod->offer)
+                                    <div class="ws-item-price">
+                                        <del>{{ number_format($prod->price, 2) }} EGP</del>
+                                        <ins>{{ number_format($prod->final_price, 2) }} EGP</ins>
+                                    </div>
+                                @else
+                                    <div class="ws-item-price"><ins>{{ number_format($prod->final_price, 2) }} EGP</ins></div>
+                                @endif
+                            </div>
+                        </a>
+                    </div>
+                @empty
+                    <div class="col-xs-12 text-center">
+                        <h3>لا توجد منتجات مطابقة / No matching products</h3>
+                        <p><a href="{{ route('shop') }}">عرض كل المنتجات / View all products</a></p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+@endsection

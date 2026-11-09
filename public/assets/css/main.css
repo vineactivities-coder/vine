@@ -1913,9 +1913,10 @@ span.ws-journal-category{
     font-size: 16px;    
     padding: 0 24px;
 }
-.ws-product-content .ws-product-quantity a.minus{
+.ws-product-content .ws-product-quantity .minus{
 	float: left;
 	width: 30%;
+	border: 0;
 	text-align: center;
 	line-height: 50px;
 	font-weight: 400;
@@ -1923,9 +1924,10 @@ span.ws-journal-category{
 	color: #C2A476;
 	background-color: #f5f5f5;
 }
-.ws-product-content .ws-product-quantity a.plus{
+.ws-product-content .ws-product-quantity .plus{
 	float: left;
 	width: 30%;
+	border: 0;
 	text-align: center;
 	line-height: 50px;
 	font-weight: 400;
@@ -2149,6 +2151,11 @@ ul.ws-footer-payments li{
 }
 
 @media only screen and (max-width : 768px) {
+	.ws-parallax-header{height: 280px;}
+	.ws-parallax-header .ws-parallax-holder h1{font-size: 34px;letter-spacing: 2px;}
+	.ws-page-container{padding-top: 45px;padding-bottom: 45px;}
+	.ws-shop-page .well .form-group{margin-bottom: 14px;}
+	.ws-product-content .btn-add-cart{position: sticky;bottom: 12px;z-index: 20;min-height: 48px;}
 	.ws-logo {padding-bottom: 0;}
 	.row{margin: 0;}
 	#ws-items-carousel .owl-controls{top: 43%;}
@@ -2217,6 +2224,14 @@ ul.ws-footer-payments li{
 	.ws-hero-description h4{display: none;}
 	.ws-3d-title{text-align: center;}
 }
+
+.shop-results-summary{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 20px;
+}
+.shop-results-summary p{margin: 0;}
 @media screen and (min-width: 768px){
    	.rwd-break { display: none;}
 }

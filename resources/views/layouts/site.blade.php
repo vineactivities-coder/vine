@@ -3,14 +3,34 @@
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
 <!--[if gt IE 8]><!-->
-<html class="no-js" lang=""> <!--<![endif]-->
+<html class="no-js" lang="ar" dir="rtl"> <!--<![endif]-->
 
 <head>
     <!-- Meta -->
     <meta charset="utf-8">
     <!--[if IE]><meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'><![endif]-->
-    <title>Vine Activities</title>
-    <meta name="description" content="">
+    @php
+        $pageTitle = $seo['title'] ?? 'Vine Activities | وسائل وأنشطة تعليمية لمدارس الأحد';
+        $pageDescription = $seo['description'] ?? 'مواد فنية وتعليمية مبتكرة للأطفال وخدام مدارس الأحد القبطية.';
+        $pageCanonical = $seo['canonical'] ?? url()->current();
+        $pageImage = $seo['image'] ?? ($site_info->landing_image ?? asset('assets/images/vineLogo.png'));
+        $pageImage = url($pageImage);
+    @endphp
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <meta name="robots" content="{{ $seo['robots'] ?? 'index,follow' }}">
+    <link rel="canonical" href="{{ $pageCanonical }}">
+    <meta property="og:locale" content="ar_EG">
+    <meta property="og:site_name" content="Vine Activities">
+    <meta property="og:type" content="{{ $seo['type'] ?? 'website' }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:url" content="{{ $pageCanonical }}">
+    <meta property="og:image" content="{{ $pageImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+    <meta name="twitter:image" content="{{ $pageImage }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="google-signin-client_id"
@@ -75,8 +95,9 @@
     <link rel="stylesheet" href="{{ url('assets/js/plugins/owl-carousel/owl.carousel.css') }}">
 
     <!-- Google Web Fonts -->
-    <link href='https://fonts.googleapis.com/css?family=Lato:400,100,300,700,900' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Merriweather:400,300,700,900' rel='stylesheet' type='text/css'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href='https://fonts.googleapis.com/css?family=Lato:300,400,700|Merriweather:300,400,700&display=swap' rel='stylesheet' type='text/css'>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
@@ -84,7 +105,6 @@
     <!-- Slider Revolution -->
     <script src="{{ url('assets/js/plugins/revolution/js/jquery.themepunch.tools.min.js') }}"></script>
     <script src="{{ url('assets/js/plugins/revolution/js/jquery.themepunch.revolution.min.js') }}"></script>
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
 
     <!-- Slider Revolution 5.0 Extensions
             (Load Extensions only on Local File Systems !
@@ -135,7 +155,6 @@
     <script src="https://accounts.google.com/gsi/client" async></script>
     <div id="g_id_onload" data-client_id="980156877622-i08tl355o8bd0aks6tuq1a3uper1latf.apps.googleusercontent.com"
         data-login_uri="{{ url('googlelogin') }}" data-use_fedcm_for_prompt="true" data-auto_prompt="true">
-    </div>
     </div>
 
     <!-- Top Bar Start -->
@@ -221,8 +240,8 @@
 
                     <!-- Logo -->
                     <div class="ws-logo ws-center">
-                        <a href="{{ url('home') }}">
-                            <img src="{{ url('assets/images/vineLogo.png') }}" alt="Alternative Text"
+                        <a href="{{ route('home') }}">
+                            <img src="{{ url('assets/images/vineLogo.png') }}" alt="Vine Activities"
                                 class="img-responsive">
                         </a>
                     </div>
@@ -230,7 +249,7 @@
                     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                         <ul class="nav navbar-nav navbar-left">
                             <li class="dropdown">
-                                <a href="{{ url('home') }}">Home </a>
+                                <a href="{{ route('home') }}">Home </a>
 
                             </li>
                             <li><a href="{{ url('shop') }}">Shop</a></li>
@@ -287,7 +306,7 @@
 
                     <!-- Instagram Item -->
                     <div class="col-sm-3 ws-instagram-item" data-sr='wait 0.1s, ease-in 20px'>
-                        <img src="{{ $site_info->footer1_url }}"
+                        <img src="{{ $site_info->footer1_url }}" loading="lazy" decoding="async"
                             alt="قداسه البابا تواضرس  يبدي اعجابه الشديد بالخط الزمني بعد مراجعته"
                             class="img-responsive"
                             title="قداسه البابا تواضرس  يبدي اعجابه الشديد بالخط الزمني بعد مراجعته">
@@ -295,7 +314,7 @@
 
                     <!-- Instagram Item -->
                     <div class="col-sm-3 ws-instagram-item" data-sr='wait 0.3s, ease-in 20px'>
-                        <img src="{{ $site_info->footer2_url }}"
+                        <img src="{{ $site_info->footer2_url }}" loading="lazy" decoding="async"
                             alt="نيافه الانبا موسي اسقف الشباب يقوم بشرح الخط الزمني في معرض الكتاب القبطي"
                             class="img-responsive"
                             title="نيافه الانبا موسي اسقف الشباب يقوم بشرح الخط الزمني في معرض الكتاب القبطي">
@@ -303,7 +322,7 @@
 
                     <!-- Instagram Item -->
                     <div class="col-sm-3 ws-instagram-item" data-sr='wait 0.5s, ease-in 20px'>
-                        <img src="{{ $site_info->footer3_url }}"
+                        <img src="{{ $site_info->footer3_url }}" loading="lazy" decoding="async"
                             alt="القمص تادرس يعقوب ملطي يقوم بمراجعه الخط الزمني للكتاب المقدس و يقوم بعرضه علي قدسه القمص مارك عزيز"
                             class="img-responsive"
                             title="القمص تادرس يعقوب ملطي يقوم بمراجعه الخط الزمني للكتاب المقدس و يقوم بعرضه علي قدسه القمص مارك عزيز">
@@ -501,6 +520,23 @@
                 });
             });
         </script>
-</body>
+        <script type="application/ld+json">
+            {!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => 'Vine Activities',
+                'url' => url('/'),
+                'logo' => asset('assets/images/vineLogo.png'),
+                'contactPoint' => [
+                    '@type' => 'ContactPoint',
+                    'telephone' => $site_info->phone ?: '+201200165007',
+                    'contactType' => 'customer service',
+                    'availableLanguage' => ['Arabic', 'English'],
+                ],
+                'sameAs' => array_values(array_filter([$site_info->fb_url, $site_info->insta_url])),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
+        </script>
+        @yield('structured_data')
+    </body>
 
 </html>
