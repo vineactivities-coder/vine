@@ -9,6 +9,7 @@
                 <li><a
                         href="{{ route('shop.category', $product->subcategory->category) }}">{{ $product->subcategory->category->arabic_name }}</a>
                 </li>
+                <li><a href="{{ route('shop.subcategory', $product->subcategory) }}">{{ $product->subcategory->arabic_name }}</a></li>
                 <li aria-current="page">{{ $product->arabic_name }}</li>
             </ol>
         </div>
@@ -46,11 +47,11 @@
 
                         <!-- Price -->
                         @if ($product->offer)
-                            <div class="ws-item-price"><del>{{ number_format($product->price) }}EGP</del>
-                                <ins>{{ number_format($product->price - $product->offer) }}EGP</ins>
+                            <div class="ws-item-price"><del>{{ number_format($product->price, 2) }}EGP</del>
+                                <ins>{{ number_format($product->final_price, 2) }}EGP</ins>
                             </div>
                         @else
-                            <div class="ws-item-price"><ins>{{ number_format($product->price) }}EGP</ins>
+                            <div class="ws-item-price"><ins>{{ number_format($product->price, 2) }}EGP</ins>
                             </div>
                         @endif
                         <!-- Quantity -->

@@ -15,9 +15,9 @@
     <div class="container ws-page-container">
         <div class="row">
             <div class="col-xs-12">
-                <form action="{{ route('shop') }}" method="GET" class="well" role="search" aria-label="البحث وتصفية المنتجات">
+                <form action="{{ route('shop') }}" method="GET" class="well shop-filters" role="search" aria-label="البحث وتصفية المنتجات">
                     <div class="row">
-                        <div class="form-group col-sm-5">
+                        <div class="form-group col-sm-3">
                             <label for="shop-search">البحث / Search</label>
                             <input id="shop-search" name="q" type="search" class="form-control"
                                 value="{{ $search_text }}" maxlength="100"
@@ -31,6 +31,19 @@
                                     <option value="{{ $category->id }}" @selected((string) $category_id === (string) $category->id)>
                                         {{ $category->arabic_name }} / {{ $category->name }} ({{ $category->products_count }})
                                     </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-2">
+                            <label for="shop-subcategory">القسم الفرعي / Subcategory</label>
+                            <select id="shop-subcategory" name="subcategory" class="form-control">
+                                <option value="">كل الأقسام الفرعية</option>
+                                @foreach ($categories as $category)
+                                    @foreach ($category->subcategories as $subcategory)
+                                        <option value="{{ $subcategory->id }}" data-category="{{ $category->id }}" @selected((string) $subcategory_id === (string) $subcategory->id)>
+                                            {{ $subcategory->arabic_name }} / {{ $subcategory->name }}
+                                        </option>
+                                    @endforeach
                                 @endforeach
                             </select>
                         </div>
@@ -54,7 +67,7 @@
         <div class="row">
             <div class="ws-shop-page">
                 <div class="col-xs-12 shop-results-summary">
-                    <p><strong>{{ $products->count() }}</strong> نتيجة / results</p>
+                    <p><strong>{{ $products->total() }}</strong> نتيجة / results</p>
                     @if ($search_text !== '' || $category_id !== null || $sort_option !== '')
                         <a href="{{ route('shop') }}" class="btn btn-default btn-sm">مسح التصفية / Clear filters</a>
                     @endif
@@ -92,7 +105,12 @@
                         <p><a href="{{ route('shop') }}">عرض كل المنتجات / View all products</a></p>
                     </div>
                 @endforelse
+                <div class="col-xs-12 shop-pagination">{{ $products->links('pagination::bootstrap-4') }}</div>
             </div>
         </div>
     </div>
+@endsection
+
+@section('js_content')
+<script src="{{ asset('assets/js/shop-filters.js') }}"></script>
 @endsection

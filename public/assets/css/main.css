@@ -2235,3 +2235,11 @@ ul.ws-footer-payments li{
 @media screen and (min-width: 768px){
    	.rwd-break { display: none;}
 }
+
+.shop-pagination .pagination{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;direction:ltr}
+.shop-pagination .page-link{min-width:42px;min-height:42px;display:block;padding:10px 14px;border:1px solid #ddd}
+.shop-pagination .active .page-link{background:#c2a476;color:#fff}
+@media(max-width:767px){.shop-results-summary{flex-wrap:wrap;gap:12px}.ws-checkout-input select{width:100%;min-height:44px}.ws-shop-minicart{max-width:95vw}.ws-cart-page .table{min-width:620px}}
+
+.shop-filters .btn-primary{background:#c2a476;border-color:#c2a476;color:#222;min-height:44px}
+.shop-filters .btn-primary:hover,.shop-filters .btn-primary:focus{background:#ab8a58;border-color:#ab8a58;color:#111}

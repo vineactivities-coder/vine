@@ -31,9 +31,9 @@ class WSBaseDataManager
         $data['apiCart'] = url('api/cart');
         $data['addToCartUrl'] = url('cart/add');
         $data['removeFromCartUrl'] = url('cart/remove');
-        $data['updateCartUrl'] = url('cart/submit');
+        $data['updateCartUrl'] = route('cart.update');
         $data['submitOrderUrl'] = url('order/submit');
-        $data['cart'] = User::getUserCart($loadStockDataOnCart);
+        $data['cart'] = User::getUserCart();
 
         $data['site_info'] = SiteInfo::getSiteInfo();
 
