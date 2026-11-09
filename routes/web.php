@@ -43,18 +43,18 @@ Route::middleware(["web"])->group(function () {
 Route::post('wishlist/add', [BuyerController::class, "addToWishlist"]);
 
 //cart routes
-Route::get('checkout', [CartController::class, "checkout"]);
-Route::post('checkout', [CartController::class, "checkout"]);
-Route::get('cart', [CartController::class, "cart"]);
-Route::get('api/cart', [CartController::class, "cartData"]);
-Route::post('cart', [CartController::class, "submitCart"]);
-Route::post('cart/add', [CartController::class, "add"]);
-Route::post('cart/remove', [CartController::class, "remove"]);
-Route::post('order/submit', [CartController::class, "submitOrder"])->name('confirmOrder');
-Route::post('order/whatsapp/submit', [CartController::class, "sendWhatsappOrder"])->name('whatsappOrder');
+Route::get('checkout', [CartController::class, 'checkout'])->name('checkout')->block();
+Route::get('cart', [CartController::class, 'cart'])->name('cart')->block();
+Route::get('api/cart', [CartController::class, 'cartData'])->block();
+Route::post('cart', [CartController::class, 'submitCart'])->name('cart.update')->block();
+Route::post('cart/add', [CartController::class, 'add'])->block();
+Route::post('cart/remove', [CartController::class, 'remove'])->block();
+Route::post('order/submit', [CartController::class, 'submitOrder'])->name('confirmOrder')->block();
+Route::post('order/whatsapp/submit', [CartController::class, 'sendWhatsappOrder'])->name('whatsappOrder')->block();
 
 //catalog functions
 Route::get('shop', [SiteController::class, 'shop'])->name('shop');
+Route::get('shop/subcategory/{subcategory_id}', [SiteController::class, 'shop'])->whereNumber('subcategory_id')->name('shop.subcategory');
 Route::get('shop/{category_id}', [SiteController::class, 'shop'])->whereNumber('category_id')->name('shop.category');
 Route::get('product/{id}', [SiteController::class, 'productPage'])->whereNumber('id')->name('product');
 Route::get('sitemap.xml', [SiteController::class, 'sitemap'])->name('sitemap');

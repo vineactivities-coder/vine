@@ -121,7 +121,7 @@ class Product extends Model
 
     public function getFinalPriceAttribute(): ?float
     {
-        return max(0, (float) $this->price - (float) $this->offer);
+        return max(0, \App\Services\Cart::cents($this->price) - \App\Services\Cart::cents($this->offer)) / 100;
     }
 
     public function getCategoryNameAttribute(): ?string
@@ -138,12 +138,12 @@ class Product extends Model
 
     public function mainImage()
     {
-        return $this->belongsTo(ProductImage::class);
+        return $this->belongsTo(ProductImage::class, 'product_image_id');
     }
 
     public function images(): HasMany
     {
-        return $this->hasMany(ProductImage::class);
+        return $this->hasMany(ProductImage::class)->orderBy('id');
     }
     public function stock()
     {

@@ -1,0 +1,52 @@
+name: Deploy test
+
+on:
+  push:
+    branches: [test]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Run deploy on the test server via SSM
+        run: |
+          set -euo pipefail
+          # The guard runs through SSM BEFORE vine-deploy can reset the app tree.
+          python3 - <<'PYCODE'
+          import base64, json
+          from pathlib import Path
+          code = Path('scripts/verify-test-environment.php').read_text().removeprefix('<?php')
+          encoded = base64.b64encode(code.encode()).decode()
+          guard = "cd /var/www/vine && php -r 'eval(base64_decode(\"" + encoded + "\"));'"
+          Path('ssm-parameters.json').write_text(json.dumps({
+              'commands': ['set -eu', guard, '/usr/local/bin/vine-deploy'],
+              'executionTimeout': ['1200'],
+          }))
+          PYCODE
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "${{ vars.VINE_TEST_INSTANCE_ID }}" \
+            --document-name AWS-RunShellScript \
+            --parameters file://ssm-parameters.json \
+            --query Command.CommandId --output text)
+
+          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ vars.VINE_TEST_INSTANCE_ID }}" || true
+
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${{ vars.VINE_TEST_INSTANCE_ID }}" \
+            --query '{Status:Status,Out:StandardOutputContent,Err:StandardErrorContent}' --output text
+          STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${{ vars.VINE_TEST_INSTANCE_ID }}" --query Status --output text)
+          [ "$STATUS" = "Success" ]

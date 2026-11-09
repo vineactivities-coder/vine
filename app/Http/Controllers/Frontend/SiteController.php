@@ -46,16 +46,26 @@ class SiteController extends Controller
         return view('frontend.home', $data);
     }
 
-    public function shop(Request $request, $category_id = null)
+    public function shop(Request $request)
     {
         $data = WSBaseDataManager::getSiteData();
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'category' => ['nullable', 'integer', 'exists:categories,id'],
+            'subcategory' => ['nullable', 'integer', 'exists:sub_categories,id'],
+            'page' => ['nullable', 'integer', 'min:1'],
             'sort' => ['nullable', 'in:price_asc,price_desc'],
         ]);
 
-        $categoryId = $filters['category'] ?? $category_id;
+        $categoryId = $request->route('category_id') ?? $filters['category'] ?? null;
+        $subcategoryId = $request->route('subcategory_id') ?? $filters['subcategory'] ?? null;
+        if ($subcategoryId !== null) {
+            $subcategory = SubCategory::findOrFail($subcategoryId);
+            if ($categoryId !== null && (int) $subcategory->category_id !== (int) $categoryId) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['subcategory' => 'القسم الفرعي لا يتبع القسم الرئيسي المختار.']);
+            }
+            $categoryId = $subcategory->category_id;
+        }
         if ($categoryId !== null && ! Category::whereKey($categoryId)->exists()) {
             abort(404);
         }
@@ -67,28 +77,33 @@ class SiteController extends Controller
             $products->whereHas('subcategory', fn ($query) => $query->where('category_id', $categoryId));
         }
 
-        if (($filters['sort'] ?? null) === 'price_asc') {
-            $products->orderByRaw(
-                'CASE WHEN products.price - COALESCE(products.offer, 0) < 0 THEN 0 ELSE products.price - COALESCE(products.offer, 0) END ASC'
-            );
-        } elseif (($filters['sort'] ?? null) === 'price_desc') {
-            $products->orderByRaw(
-                'CASE WHEN products.price - COALESCE(products.offer, 0) < 0 THEN 0 ELSE products.price - COALESCE(products.offer, 0) END DESC'
-            );
-        } else {
-            $products->orderBy('sub_category_id')->orderBy('id');
+        if ($subcategoryId !== null) {
+            $products->where('sub_category_id', $subcategoryId);
         }
 
-        $data['categories'] = Category::withCount('products')->orderBy('id')->get();
-        $data['products'] = $products->with('subcategory.category')->get();
+        // Match Cart's per-unit rounding and clamp legacy negative values.
+        $priceCents = 'CASE WHEN products.price < 0 THEN 0 ELSE ROUND(products.price * 100) END';
+        $offerCents = 'CASE WHEN COALESCE(products.offer, 0) < 0 THEN 0 ELSE ROUND(COALESCE(products.offer, 0) * 100) END';
+        $finalPrice = "CASE WHEN ($priceCents) - ($offerCents) < 0 THEN 0 ELSE ($priceCents) - ($offerCents) END";
+        if (($filters['sort'] ?? null) === 'price_asc') {
+            $products->orderByRaw($finalPrice.' ASC');
+        } elseif (($filters['sort'] ?? null) === 'price_desc') {
+            $products->orderByRaw($finalPrice.' DESC');
+        } else {
+            $products->orderBy('sub_category_id');
+        }
+
+        $data['categories'] = Category::with('subcategories')->withCount('products')->orderBy('id')->get();
+        $data['products'] = $products->orderBy('products.id')->with(['subcategory.category', 'mainImage', 'images'])->paginate(12)->withQueryString();
         $data['category_id'] = $categoryId;
+        $data['subcategory_id'] = $subcategoryId;
         $data['search_text'] = $searchText;
         $data['sort_option'] = $filters['sort'] ?? '';
         $data['seo'] = [
             'title' => 'منتجات وأنشطة مدارس الأحد | Vine Activities',
             'description' => 'تصفح وسائل وأنشطة Vine Activities التعليمية بالعربية والإنجليزية واختر المنتج المناسب حسب القسم والسعر.',
-            'canonical' => $categoryId === null ? route('shop') : route('shop.category', $categoryId),
-            'robots' => $searchText !== '' || isset($filters['sort']) ? 'noindex,follow' : 'index,follow',
+            'canonical' => $subcategoryId !== null ? route('shop.subcategory', $subcategoryId) : ($categoryId === null ? route('shop') : route('shop.category', $categoryId)),
+            'robots' => $searchText !== '' || isset($filters['sort']) || $request->integer('page', 1) > 1 ? 'noindex,follow' : 'index,follow',
         ];
 
         return view('frontend.catalog.shop', $data);
