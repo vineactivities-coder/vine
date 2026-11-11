@@ -743,7 +743,7 @@ a.ws-instagram-link{
 .ws-works-caption{
 	margin-top: 15px;
 }
-h3.ws-item-title{	
+h3.ws-item-title, h1.ws-item-title{
 	font-size: 20px;			
 	text-transform: uppercase;
 	margin-top: 5px;
@@ -1913,7 +1913,7 @@ span.ws-journal-category{
     font-size: 16px;    
     padding: 0 24px;
 }
-.ws-product-content .ws-product-quantity a.minus{
+.ws-product-content .ws-product-quantity .minus{
 	float: left;
 	width: 30%;
 	text-align: center;
@@ -1923,7 +1923,7 @@ span.ws-journal-category{
 	color: #C2A476;
 	background-color: #f5f5f5;
 }
-.ws-product-content .ws-product-quantity a.plus{
+.ws-product-content .ws-product-quantity .plus{
 	float: left;
 	width: 30%;
 	text-align: center;
@@ -2220,3 +2220,5 @@ ul.ws-footer-payments li{
 @media screen and (min-width: 768px){
    	.rwd-break { display: none;}
 }
+.ws-product-quantity button{border:0}
+@media(max-width:767px){.ws-shop-minicart{max-width:95vw}.ws-cart-page .table{min-width:620px}}

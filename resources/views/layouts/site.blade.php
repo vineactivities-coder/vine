@@ -3,14 +3,13 @@
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
 <!--[if gt IE 8]><!-->
-<html class="no-js" lang=""> <!--<![endif]-->
+<html class="no-js" lang="ar"> <!--<![endif]-->
 
 <head>
     <!-- Meta -->
     <meta charset="utf-8">
     <!--[if IE]><meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'><![endif]-->
-    <title>Vine Activities</title>
-    <meta name="description" content="">
+    @include('frontend.partials.seo')
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="google-signin-client_id"
@@ -163,7 +162,7 @@
 
                 <!-- Cart -->
                 <li class="ws-shop-cart">
-                    <a href="{{ url('cart') }}" class="btn btn-sm cart-count">Cart (2)</a>
+                    <a href="{{ url('cart') }}" class="btn btn-sm cart-count">Cart ({{ $cart->count }})</a>
 
                     <!-- Cart Popover -->
                     <div class="ws-shop-minicart">
@@ -177,7 +176,7 @@
 
                             <!-- Subtotal -->
                             <div class="minicart-content-total">
-                                <h3>Subtotal: {{ $cart->total }}</h3>
+                                <h3>Subtotal: {{ number_format($cart->total, 2) }} EGP</h3>
                             </div>
 
                             <!-- Checkout -->
@@ -259,6 +258,11 @@
         </header>
         <!-- End Header -->
 
+        @if ($errors->any())
+            <div class="container alert alert-danger" role="alert"><ul>
+                @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+            </ul></div>
+        @endif
         @yield('content')
 
 
@@ -401,106 +405,12 @@
         <script src="{{ url('assets/js/plugins/bootstrap-dropdownhover.min.js') }}"></script>
         <script src="{{ url('assets/js/main.js') }}"></script>
 
+        <script src="{{ asset('assets/js/cart.js') }}?v=seo-cart-1"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                fetchCartData();
-
-                function fetchCartData() {
-                    fetch('{{ $apiCart }}')
-                        .then(response => response.json())
-                        .then(cart => {
-                            populateCart(cart);
-                        })
-                        .catch(error => {
-                            console.error('Error fetching cart data:', error);
-                        });
-                }
-
-                function populateCart(cart) {
-                    const minicartContentItems = document.querySelector('.minicart-content-items');
-                    const minicartTotal = document.querySelector('.minicart-content-total h3');
-                    const minicartCount = document.querySelector('.cart-count');
-                    minicartContentItems.innerHTML = ''; // Clear current items
-
-                    cart.items.forEach(item => {
-                        minicartContentItems.innerHTML += `
-
-
-                <li class="media" data-id="${item.id}">
-                    <div class="media-left">
-                        <a href="#">
-                            <img src="${item.image_url}" class="media-object" alt="Alternative Text">
-                        </a>
-                    </div>
-                    <div class="minicart-content-details media-body">
-                        <h3><a href="#">${item.quantity > 1 ? `${item.quantity} x ` : ''}${item.title}</a></h3>
-                        <span class="minicart-content-price" >${item.quantity} x ${item.price}EGP</span>               
-                        <span class="minicart-content-remove btn-remove" data-id="${item.id}"><i class="fa fa-times"></i></span> 
-                    </div>
-                </li>`;
-                    });
-
-                    // Update subtotal
-                    minicartTotal.textContent = `Subtotal: ${cart.total}`;
-                    minicartCount.textContent = `Cart (${cart.count})`;
-
-                    // Attach event listeners
-                    attachEventListeners();
-
-                }
-
-                function attachEventListeners() {
-
-
-                    document.querySelectorAll('.btn-remove').forEach(button => {
-                        button.addEventListener('click', function() {
-                            const id = this.dataset.id;
-                            updateCart('{{ $removeFromCartUrl }}', {
-                                id: id
-                            });
-                        });
-                    });
-                }
-
-                function updateCart(url, data) {
-                    fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify(data)
-                        })
-                        .then(response => response.json())
-                        .then(cart => {
-                            fetchCartData();
-
-                        })
-                        .catch(error => {
-                            console.error('Error updating cart:', error);
-                        });
-
-
-                }
-
-                document.querySelectorAll('.btn-add-cart').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const id = document.querySelector(`#prod_id`).value;
-                        const quantityInput = document.querySelector(`#prod_count`);
-                        const quantity = parseInt(quantityInput.value) || 1;
-                        updateCart('{{ $addToCartUrl }}', {
-                            id: id,
-                            quantity: quantity
-                        });
-
-                        Swal.fire({
-                            text: "Cart Updated",
-                            icon: "success",
-                        })
-                    });
-                });
-            });
+            VineCart.mount({initial: @json($cart), api: @json($apiCart), add: @json($addToCartUrl),
+                remove: @json($removeFromCartUrl), csrf: @json(csrf_token())});
         </script>
+        @yield('js_content')
 </body>
 
 </html>
