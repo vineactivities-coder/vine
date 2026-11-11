@@ -6,10 +6,12 @@
         <div class="row">
 
             <!-- Cart Content -->
-            <div class="ws-cart-page">
+            <div class="ws-cart-page" data-cart-page>
                 <div class="col-sm-8">
                     <div class="ws-mycart-content">
-                        <table class="table">
+                        <form method="POST" action="{{ $updateCartUrl }}">
+                        @csrf
+                        <div class="table-responsive"><table class="table">
                             <thead>
                                 <tr>
                                     <th class="cart-item-head">&nbsp;</th>
@@ -22,8 +24,7 @@
                             </thead>
 
                             <tbody>
-                                <form method="POST">
-                                    @csrf
+
                      
                                 @foreach ($cart->items as $item)
                                     <tr class="cart-item">
@@ -41,37 +42,33 @@
                                         </td>
                                         <td class="cart-item-cell cart-item-quantity">
                                             <input type="number" value="{{ $item->quantity }}"
-                                                id="prod-{{ $item->id }}-quantity" name=quantity[] >
+                                                id="prod-{{ $item->id }}-quantity" name="quantity[]" min="0" max="99" step="1" required >
                                             <input type="hidden" name="product[]" value="{{ $item->id }}" />
                                         </td>
                                         <td class="cart-item-cell cart-item-subtotal">
                                             <span
-                                                class="amount">{{ number_format($item->price * $item->quantity, 2) }}</span>
+                                                class="amount">{{ number_format($item->line_total, 2) }}</span>
                                         </td>
-                                        <td class="cart-item-cell cart-item-remove"
-                                            onclick="setQuantity({{ $item->id }}, '0')">
-                                            <span><i class="fa fa-times"></i></span>
+                                        <td class="cart-item-cell cart-item-remove">
+                                            <button type="button" class="cart-remove btn btn-default btn-sm" data-id="{{ $item->id }}" aria-label="حذف {{ $item->title }}">×</button>
                                         </td>
                                     </tr>
                                 @endforeach
-                                <script>
-                                    function setQuantity(id, quantity) {
-                                        $('#prod-' + id + '-quantity').val(quantity)
-                                    }
-                                </script>
+
 
                                 <tr>
                                     <td colspan="6">
 
                                         <!-- Update Cart -->
                                         <div class="ws-update-cart">
-                                            <button class="btn ws-small-btn-black" type="submit">Update Cart</button>
+                                            <button class="btn ws-small-btn-black" type="submit" @disabled(! $cart->count)>Update Cart</button>
                                         </div>
                                     </td>
                                 </tr>
-                                </form>
+
                             </tbody>
-                        </table>
+                        </table></div>
+                        </form>
                     </div>
                 </div>
 
@@ -83,7 +80,7 @@
                             <tbody>
                                 <tr class="cart-subtotal">
                                     <th>Subtotal</th>
-                                    <td><span class="amount">{{number_format($cart->total + $cart->discount ?? 0,2)}}EGP</span></td>
+                                    <td><span class="amount">{{number_format($cart->subtotal,2)}}EGP</span></td>
                                 </tr>
 
                                 <tr class="shipping">
@@ -97,7 +94,7 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <a class="btn ws-btn-fullwidth" href="{{url('checkout')}}">Check Out</a>
+                        @if ($cart->count)<a class="btn ws-btn-fullwidth" href="{{ url('checkout') }}">Check Out</a>@else<p>السلة فارغة / Your cart is empty</p>@endif
                     </div>
                 </div>
             </div>

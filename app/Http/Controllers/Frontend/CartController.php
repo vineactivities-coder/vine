@@ -10,6 +10,8 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\WSBaseDataManager;
+use App\Services\Cart;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -64,7 +66,7 @@ class CartController extends Controller
 
     public function cartData()
     {
-        return response()->json(User::getUserCart());
+        return response()->json(Cart::snapshot())->header('Cache-Control', 'no-store');
     }
 
     public function cart()
@@ -82,81 +84,50 @@ class CartController extends Controller
 
     public function submitCart(Request $request)
     {
-
-        $request->validate([
-            "product"   =>  "required|array",
-            "quantity"  =>  "required|array",
-
+        $data = $request->validate([
+            'product' => ['present', 'array', 'list'],
+            'quantity' => ['present', 'array', 'list'],
+            'product.*' => ['required', 'integer', 'distinct', 'exists:products,id'],
+            'quantity.*' => ['required', 'integer', 'between:0,99'],
         ]);
-        $this->updateCartFromCartArray($request);
-        return redirect('cart');
+        if (count($data['product']) !== count($data['quantity'])) {
+            throw ValidationException::withMessages(['quantity' => 'قوائم المنتجات والكميات غير متطابقة.']);
+        }
+        $quantities = [];
+        foreach ($data['product'] as $index => $id) {
+            if ($data['quantity'][$index] > 0) {
+                $quantities[(int) $id] = (int) $data['quantity'][$index];
+            }
+        }
+        $cart = Cart::store($quantities);
+
+        return $request->expectsJson() ? response()->json($cart) : redirect()->route('cart');
     }
 
     public function add(Request $request)
     {
-        $request->validate([
-            "id"            =>  "required|exists:products",
-            "quantity"      =>  "required|numeric"
+        $data = $request->validate([
+            'id' => ['required', 'integer', 'exists:products,id'],
+            'quantity' => ['required', 'integer', 'between:1,99'],
         ]);
-
-        $new_cart_item = [
-            "details"   =>  Product::findOrFail($request->id),
-        ];
-
-
-        if ($request->session()->has("cart")) {
-            //cart found
-            $cartArray = $request->session()->get("cart");
-            //the cart array key's format is "[prod_id]-[color_id]-[size_id]"
-            $alreadyInCart = ($cartArray[$request->id] ?? 0);
-
-            $cartArray[$request->id] =
-                $alreadyInCart + $request->quantity;
-            $new_cart_item["quantity"] = $cartArray[$request->id];
-        } else {
-
-            //new cart created by adding first item
-            $cartArray = [
-                $request->id => $request->quantity
-            ];
-            $new_cart_item["quantity"] = $request->quantity;
+        $quantities = Cart::quantities();
+        $quantity = ($quantities[$data['id']] ?? 0) + (int) $data['quantity'];
+        if ($quantity > 99) {
+            throw ValidationException::withMessages(['quantity' => 'الحد الأقصى لكمية المنتج 99.']);
         }
-        $request->session()->put("cart", $cartArray);
-        return response()->json(["message" => true]);
+        $quantities[$data['id']] = $quantity;
+
+        return response()->json(Cart::store($quantities));
     }
 
     public function remove(Request $request)
     {
-        $request->validate([
-            "id"        =>  "required|exists:products",
-        ]);
-        $cartArray = session("cart");
+        $data = $request->validate(['id' => ['required', 'integer', 'min:1']]);
+        $quantities = Cart::quantities();
+        unset($quantities[$data['id']]);
 
-        if (isset($cartArray[$request->id])) {
-            unset($cartArray[$request->id]);
-        }
-
-        $request->session()->put("cart", $cartArray);
-
-        return response()->json(["message" => true]);
+        return response()->json(Cart::store($quantities));
     }
-
-    /**
-     * @param array $cart the cart array retrieved from the cart page
-     */
-    private function updateCartFromCartArray(Request $cartRequest): array
-    {
-        Session::remove('cart');
-
-        $newCartArr = array();
-        foreach ($cartRequest->product as $index => $prodID) {
-            if ($cartRequest->quantity[$index])
-                $newCartArr[$prodID] = $cartRequest->quantity[$index];
-        }
-        Session::put('cart', $newCartArr);
-        return $newCartArr;
-    }
-
 
     private function getOrderItemsObjectArray(array $itemsArray)
     {

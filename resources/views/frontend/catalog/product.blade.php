@@ -25,7 +25,8 @@
                 <div id="ws-products-carousel" class="owl-carousel">
                     @foreach ($product->images as $img)
                         <div class="item">
-                            <img src="{{ $img->full_image_url }}" class="img-responsive" alt="{{ $product->name }}">
+                            <img src="{{ $img->full_image_url }}" class="img-responsive" alt="{{ $product->arabic_name }} / {{ $product->name }}"
+                                @if($loop->first) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
                         </div>
                     @endforeach
                 </div>
@@ -40,24 +41,24 @@
                             {{ $product->subcategory->arabic_name }}</div>
 
                         <!-- Title -->
-                        <h3 class="ws-item-title">{{ $product->arabic_name }}</h3>
+                        <h1 class="ws-item-title">{{ $product->arabic_name }}</h1>
 
                         <div class="ws-separator"></div>
 
                         <!-- Price -->
                         @if ($product->offer)
-                            <div class="ws-item-price"><del>{{ number_format($product->price) }}EGP</del>
-                                <ins>{{ number_format($product->price - $product->offer) }}EGP</ins>
+                            <div class="ws-item-price"><del>{{ number_format($product->price, 2) }}EGP</del>
+                                <ins>{{ number_format($product->final_price, 2) }}EGP</ins>
                             </div>
                         @else
-                            <div class="ws-item-price"><ins>{{ number_format($product->price) }}EGP</ins>
+                            <div class="ws-item-price"><ins>{{ number_format($product->final_price, 2) }}EGP</ins>
                             </div>
                         @endif
                         <!-- Quantity -->
                         <div class="ws-product-quantity">
-                            <a onclick="subCount()" class="minus">-</a>
-                            <input id="prod_count" type="text" value="1" size="4">
-                            <a onclick="addCount()" class="plus">+</a>
+                            <button type="button" onclick="subCount()" class="minus" aria-label="تقليل الكمية">-</button>
+                            <input id="prod_count" type="number" value="1" min="1" max="99" step="1" inputmode="numeric" size="4" aria-label="الكمية">
+                            <button type="button" onclick="addCount()" class="plus" aria-label="زيادة الكمية">+</button>
                         </div>
                     </header>
 
@@ -66,7 +67,7 @@
                     </div>
                     <input type="hidden" id="prod_id" value="{{$product->id}}" />
                     <!-- Button -->
-                    <a class="btn ws-btn-fullwidth btn-add-cart">Add To Cart</a><br><br><br>
+                    <button type="button" class="btn ws-btn-fullwidth btn-add-cart">Add To Cart</button><br><br><br>
                 </div>
             </div>
         </div>
@@ -122,7 +123,7 @@
                         <a href="{{ url('product/' . $prod->id) }}">
                             <!-- Image -->
                             <figure>
-                                <img src="{{ $prod->main_image_url }}" alt="Alternative Text" class="img-responsive">
+                                <img src="{{ $prod->main_image_url }}" alt="{{ $prod->arabic_name }} / {{ $prod->name }}" class="img-responsive" loading="lazy" decoding="async">
                             </figure>
                             <div class="ws-works-caption text-center">
                                 <!-- Item Category -->
@@ -135,7 +136,7 @@
                                 <div class="ws-item-separator"></div>
 
                                 <!-- Price -->
-                                <div class="ws-item-price">{{ number_format($prod->price - $prod->offer) }}EGP</div>
+                                <div class="ws-item-price">{{ number_format($prod->final_price, 2) }}EGP</div>
                             </div>
                         </a>
                     </div>
@@ -147,11 +148,11 @@
 
     <script>
         function addCount() {
-            $('#prod_count').val( +$('#prod_count').val() + 1)
+            $('#prod_count').val(Math.min(+$('#prod_count').val() + 1, 99))
         }
 
         function subCount() {
-            $('#prod_count').val(  Math.max(+$('#prod_count').val() - 1, 0))
+            $('#prod_count').val(Math.max(+$('#prod_count').val() - 1, 1))
         }
     </script>
 @endsection
