@@ -4,131 +4,168 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Area;
+use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Services\Cart;
+use App\Models\Product;
+use App\Models\User;
 use App\Services\WSBaseDataManager;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use stdClass;
 
 class CartController extends Controller
 {
-    private function checkoutData(Request $request): array
-    {
-        $data = $request->validate([
-            'guestName' => [Rule::requiredIf(! $request->user()), 'nullable', 'string', 'max:255'],
-            'area' => ['required', 'integer', Rule::exists('areas', 'id')->where('is_active', 1)],
-            'address' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
-            'note' => ['nullable', 'string', 'max:255'],
-        ]);
-        $cart = Cart::snapshot();
-        if ($cart->count === 0) {
-            throw ValidationException::withMessages(['cart' => 'السلة فارغة. أضف منتجات قبل إتمام الطلب.']);
-        }
-        $area = Area::active()->findOrFail($data['area']);
-        $shipping = Cart::cents($area->rate);
-
-        return [$data, $cart, $area, $shipping];
-    }
-
     public function submitOrder(Request $request)
     {
-        [$data, $cart, $area] = $this->checkoutData($request);
-        DB::transaction(function () use ($request, $data, $cart, $area) {
-            $items = array_map(fn ($item) => new OrderItem(['product_id' => $item->id, 'amount' => $item->quantity]), $cart->items);
-            $order = Order::addNew($request->user()?->id, $data['phone'], $data['address'], $area->id,
-                $data['note'] ?? null, $items, $cart->total, $request->user() ? null : $data['guestName']);
-            $order->addTimeline('Order Opened by client');
-        });
-        Cart::store([]);
+        $request->validate([
+            "user"          =>  "required_if:guest,2|nullable|exists:users,id",
+            "guestName"     =>  "required_if:guest,1",
+            "area"          =>  "required",
+            "address"      =>  "required",
+            "phone"      =>  "required",
+        ]);
 
-        return redirect()->route('home')->with('flag', 'showOrderSubmitted');
+        $loadedCart = User::getUserCart();
+        $itemsArray = $this->getOrderItemsObjectArray($loadedCart->items);
+
+        $order = Order::addNew($request->user, $request->phone, $request->address, $request->area, $request->note, $itemsArray, $loadedCart->total, $request->guestName);
+        if ($order) {
+            $order->addTimeline("Order Opened by client");
+            $request->session()->forget('cart');
+            $msgClientName = '';
+            if (isset($request->user)) {
+                $msgClientName = (User::findOrFail($request->user))->name;
+            } else {
+                $msgClientName = $request->guestName;
+            }
+
+            return  redirect('home')->with("flag", "showOrderSubmitted");
+        } else {
+            return redirect('home')->with("flag", "showOrderFailed");
+        }
     }
 
     public function sendWhatsappOrder(Request $request)
     {
-        [$data, $cart, $area, $shipping] = $this->checkoutData($request);
-        $name = $request->user()?->name ?? $data['guestName'];
-        $money = fn ($value) => number_format($value, 2, '.', '');
-        $message = "اهلا Vine، أريد تأكيد طلب.\nالاسم: {$name}\nالهاتف: {$data['phone']}\nالعنوان: {$data['address']}\nالمنطقة: {$area->arabic_name}\n";
-        foreach ($cart->items as $item) {
-            $message .= "• {$item->title}: {$item->quantity} x {$money($item->price)} = {$money($item->line_total)} جنيه\n";
-        }
-        $total = (Cart::cents($cart->total) + $shipping) / 100;
-        $message .= "قيمة المنتجات: {$money($cart->total)} جنيه\nالشحن: {$money($shipping / 100)} جنيه\nالإجمالي: {$money($total)} جنيه\nالملاحظات: ".($data['note'] ?? '');
-
-        // Only prepare a link; no message is sent by the server.
-        return response()->json(['url' => 'https://wa.me/201200165007?text='.rawurlencode($message)]);
+        $request->validate([
+            "user"          =>  "required_if:guest,2|nullable|exists:users,id",
+            "guestName"     =>  "required_if:guest,1",
+            "area"          =>  "required",
+            "address"      =>  "required",
+            "phone"      =>  "required",
+        ]);
+        $loadedCart = User::getUserCart();
+        $itemsArray = $this->getOrderItemsObjectArray($loadedCart->items);
+        $whatsappUrl = Order::generateWhatsAppMessage($request->user, $request->phone, $request->address, $request->area, $request->note, $itemsArray, $loadedCart->total, $request->guestName);
+        return response()->json(["url" => $whatsappUrl]);
     }
 
     public function cartData()
     {
-        return response()->json(Cart::snapshot())->header('Cache-Control', 'no-store');
+        return response()->json(User::getUserCart());
     }
 
     public function cart()
     {
-        return view('frontend.cart.cart', WSBaseDataManager::getSiteData());
+        $data = WSBaseDataManager::getSiteData(true);
+        return view('frontend.cart.cart', $data);
     }
 
     public function checkout()
     {
         $data = WSBaseDataManager::getSiteData();
-        if (! $data['cart']->count) {
-            return redirect()->route('cart')->withErrors(['cart' => 'السلة فارغة.']);
-        }
-        $data['areas'] = Area::active()->orderBy('id')->get();
-
+        $data['areas']  = Area::all();
         return view('frontend.cart.checkout', $data);
     }
 
     public function submitCart(Request $request)
     {
-        $data = $request->validate([
-            'product' => ['present', 'array', 'list'],
-            'quantity' => ['present', 'array', 'list'],
-            'product.*' => ['required', 'integer', 'distinct', 'exists:products,id'],
-            'quantity.*' => ['required', 'integer', 'between:0,99'],
-        ]);
-        if (count($data['product']) !== count($data['quantity'])) {
-            throw ValidationException::withMessages(['quantity' => 'قوائم المنتجات والكميات غير متطابقة.']);
-        }
-        $quantities = [];
-        foreach ($data['product'] as $index => $id) {
-            if ($data['quantity'][$index] > 0) {
-                $quantities[(int) $id] = (int) $data['quantity'][$index];
-            }
-        }
-        $cart = Cart::store($quantities);
 
-        return $request->expectsJson() ? response()->json($cart) : redirect()->route('cart');
+        $request->validate([
+            "product"   =>  "required|array",
+            "quantity"  =>  "required|array",
+
+        ]);
+        $this->updateCartFromCartArray($request);
+        return redirect('cart');
     }
 
     public function add(Request $request)
     {
-        $data = $request->validate([
-            'id' => ['required', 'integer', 'exists:products,id'],
-            'quantity' => ['required', 'integer', 'between:1,99'],
+        $request->validate([
+            "id"            =>  "required|exists:products",
+            "quantity"      =>  "required|numeric"
         ]);
-        $quantities = Cart::quantities();
-        $quantity = ($quantities[$data['id']] ?? 0) + (int) $data['quantity'];
-        if ($quantity > 99) {
-            throw ValidationException::withMessages(['quantity' => 'الحد الأقصى لكمية المنتج 99.']);
-        }
-        $quantities[$data['id']] = $quantity;
 
-        return response()->json(Cart::store($quantities));
+        $new_cart_item = [
+            "details"   =>  Product::findOrFail($request->id),
+        ];
+
+
+        if ($request->session()->has("cart")) {
+            //cart found
+            $cartArray = $request->session()->get("cart");
+            //the cart array key's format is "[prod_id]-[color_id]-[size_id]"
+            $alreadyInCart = ($cartArray[$request->id] ?? 0);
+
+            $cartArray[$request->id] =
+                $alreadyInCart + $request->quantity;
+            $new_cart_item["quantity"] = $cartArray[$request->id];
+        } else {
+
+            //new cart created by adding first item
+            $cartArray = [
+                $request->id => $request->quantity
+            ];
+            $new_cart_item["quantity"] = $request->quantity;
+        }
+        $request->session()->put("cart", $cartArray);
+        return response()->json(["message" => true]);
     }
 
     public function remove(Request $request)
     {
-        $data = $request->validate(['id' => ['required', 'integer', 'min:1']]);
-        $quantities = Cart::quantities();
-        unset($quantities[$data['id']]);
+        $request->validate([
+            "id"        =>  "required|exists:products",
+        ]);
+        $cartArray = session("cart");
 
-        return response()->json(Cart::store($quantities));
+        if (isset($cartArray[$request->id])) {
+            unset($cartArray[$request->id]);
+        }
+
+        $request->session()->put("cart", $cartArray);
+
+        return response()->json(["message" => true]);
+    }
+
+    /**
+     * @param array $cart the cart array retrieved from the cart page
+     */
+    private function updateCartFromCartArray(Request $cartRequest): array
+    {
+        Session::remove('cart');
+
+        $newCartArr = array();
+        foreach ($cartRequest->product as $index => $prodID) {
+            if ($cartRequest->quantity[$index])
+                $newCartArr[$prodID] = $cartRequest->quantity[$index];
+        }
+        Session::put('cart', $newCartArr);
+        return $newCartArr;
+    }
+
+
+    private function getOrderItemsObjectArray(array $itemsArray)
+    {
+        $retArr = array();
+        foreach ($itemsArray as $item) {
+            array_push($retArr, new OrderItem(
+                ["product_id" => $item->id, "amount" => $item->quantity]
+            ));
+        }
+        return $retArr;
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -57,28 +58,14 @@ class Product extends Model
         return $this->save();
     }
 
-    public static function searchQuery(string $searchText): Builder
-    {
-        // Treat user supplied % and _ as ordinary characters instead of SQL
-        // wildcards. This keeps a search for either character from matching the
-        // entire catalogue while still allowing partial-word searches.
-        $searchTerm = '%' . addcslashes($searchText, '\\%_') . '%';
-
-        return self::query()
-            ->where(function (Builder $query) use ($searchTerm) {
-                $query->where('name', 'LIKE', $searchTerm)
-                    ->orWhere('arabic_name', 'LIKE', $searchTerm)
-                    ->orWhere('desc', 'LIKE', $searchTerm)
-                    ->orWhere('arabic_desc', 'LIKE', $searchTerm)
-                    ->orWhereHas('subcategory', function (Builder $subcategory) use ($searchTerm) {
-                        $subcategory->where('name', 'LIKE', $searchTerm)
-                            ->orWhere('arabic_name', 'LIKE', $searchTerm)
-                            ->orWhereHas('category', function (Builder $category) use ($searchTerm) {
-                                $category->where('name', 'LIKE', $searchTerm)
-                                    ->orWhere('arabic_name', 'LIKE', $searchTerm);
-                            });
-                    });
-            });
+    public static function searchQuery(string $search_text) : Builder {
+        return self::select('products.*')
+            ->join('prod_tag', 'prod_tag.product_id', 'prod_tag.tag_id')
+            ->join('tags', 'tag', '=', 'tags.id')
+            ->join('sub_categories', 'products.sub_category_id', '=', 'sub_categories.id')
+            ->orWhere('tags.name', 'LIKE', "%{$search_text}%")
+            ->orWhere('sub_categories.name', 'LIKE', "%{$search_text}%")
+            ->orWhere('products.name', 'LIKE', "%{$search_text}%");
     }
 
     //function 
@@ -103,15 +90,12 @@ class Product extends Model
     public function getMainImageUrlAttribute(): ?string
     {
         $this->loadMissing('mainImage', 'images');
-
-        if ($this->mainImage?->full_image_url) {
-            return $this->mainImage->full_image_url;
+        if (is_null($this->mainImage)) {
+            return ($this->images->isNotEmpty()) ? $this->images->random()->full_image_url : asset('assets/img/works/journals/1.jpg');
+        } else {
+            return $this->mainImage->full_image_url ?? asset('assets/img/works/journals/1.jpg');
         }
-
-        // A deterministic fallback keeps product cards, social previews, and
-        // structured data stable between requests when no main image is set.
-        return $this->images->first()?->full_image_url
-            ?? asset('assets/img/works/journals/1.jpg');
+        return asset('assets/img/works/journals/1.jpg');
     }
 
     public function getMainImageIdAttribute(): ?int
@@ -121,7 +105,7 @@ class Product extends Model
 
     public function getFinalPriceAttribute(): ?float
     {
-        return max(0, \App\Services\Cart::cents($this->price) - \App\Services\Cart::cents($this->offer)) / 100;
+        return $this->price - $this->offer;
     }
 
     public function getCategoryNameAttribute(): ?string
@@ -138,12 +122,12 @@ class Product extends Model
 
     public function mainImage()
     {
-        return $this->belongsTo(ProductImage::class, 'product_image_id');
+        return $this->belongsTo(ProductImage::class);
     }
 
     public function images(): HasMany
     {
-        return $this->hasMany(ProductImage::class)->orderBy('id');
+        return $this->hasMany(ProductImage::class);
     }
     public function stock()
     {
