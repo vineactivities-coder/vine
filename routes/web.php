@@ -45,13 +45,16 @@ Route::post('wishlist/add', [BuyerController::class, "addToWishlist"]);
 //cart routes
 Route::get('checkout', [CartController::class, "checkout"]);
 Route::post('checkout', [CartController::class, "checkout"]);
-Route::get('cart', [CartController::class, "cart"]);
-Route::get('api/cart', [CartController::class, "cartData"]);
-Route::post('cart', [CartController::class, "submitCart"]);
-Route::post('cart/add', [CartController::class, "add"]);
-Route::post('cart/remove', [CartController::class, "remove"]);
+Route::get('cart', [CartController::class, 'cart'])->name('cart')->block();
+Route::get('api/cart', [CartController::class, 'cartData'])->block();
+Route::post('cart', [CartController::class, 'submitCart'])->name('cart.update')->block();
+Route::post('cart/add', [CartController::class, 'add'])->block();
+Route::post('cart/remove', [CartController::class, 'remove'])->block();
 Route::post('order/submit', [CartController::class, "submitOrder"])->name('confirmOrder');
 Route::post('order/whatsapp/submit', [CartController::class, "sendWhatsappOrder"])->name('whatsappOrder');
+
+Route::get('sitemap.xml', [\App\Http\Controllers\Frontend\SeoController::class, 'sitemap']);
+Route::get('robots.txt', [\App\Http\Controllers\Frontend\SeoController::class, 'robots']);
 
 //catalog functions
 Route::get('shop', [SiteController::class, 'shop'])->name('all');

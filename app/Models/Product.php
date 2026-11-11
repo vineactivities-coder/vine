@@ -90,12 +90,9 @@ class Product extends Model
     public function getMainImageUrlAttribute(): ?string
     {
         $this->loadMissing('mainImage', 'images');
-        if (is_null($this->mainImage)) {
-            return ($this->images->isNotEmpty()) ? $this->images->random()->full_image_url : asset('assets/img/works/journals/1.jpg');
-        } else {
-            return $this->mainImage->full_image_url ?? asset('assets/img/works/journals/1.jpg');
-        }
-        return asset('assets/img/works/journals/1.jpg');
+        return $this->mainImage?->full_image_url
+            ?? $this->images->first()?->full_image_url
+            ?? asset('assets/img/works/journals/1.jpg');
     }
 
     public function getMainImageIdAttribute(): ?int
@@ -105,7 +102,7 @@ class Product extends Model
 
     public function getFinalPriceAttribute(): ?float
     {
-        return $this->price - $this->offer;
+        return max(0, \App\Services\Cart::cents($this->price) - \App\Services\Cart::cents($this->offer)) / 100;
     }
 
     public function getCategoryNameAttribute(): ?string
@@ -122,12 +119,12 @@ class Product extends Model
 
     public function mainImage()
     {
-        return $this->belongsTo(ProductImage::class);
+        return $this->belongsTo(ProductImage::class, 'product_image_id');
     }
 
     public function images(): HasMany
     {
-        return $this->hasMany(ProductImage::class);
+        return $this->hasMany(ProductImage::class)->orderBy('id');
     }
     public function stock()
     {
